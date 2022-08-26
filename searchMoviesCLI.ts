@@ -18,7 +18,8 @@ async function moviesCLI() {
         if (command === 'q') { break }
         console.log(`searching... ${command}`)
         console.log(`\n`)
-        const text = "SELECT name, date, kind FROM movies WHERE LOWER(name) LIKE LOWER($1) LIMIT 10"
+        try {
+        const text = "SELECT id, name, date, runtime, budget, revenue, vote_average, votes_count FROM movies WHERE LOWER(name) LIKE LOWER($1) AND kind = 'movie' ORDER BY date DESC LIMIT 10"
         const values = [`%${command}%`]
         const queryResults = await client.query(text, values)
         if (queryResults.rowCount > 0) {
@@ -27,6 +28,10 @@ async function moviesCLI() {
         }
         else {
             console.log('no results')
+        }
+        } catch(error)
+        {
+console.error(`ERROR: ${error}`)
         }
     }
 
