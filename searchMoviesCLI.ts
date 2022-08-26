@@ -7,8 +7,8 @@ async function moviesCLI() {
     //we only need to specify the (non-default) database name.
     console.log(`Greetings ${process.env.PGUSER} !`)
     const client = new Client({ database: 'omdb' });
-    await client.connect().then(() => console.log(`successfully connected to omdb!`))
-    console.log("Welcome to search-movies-cli!");
+    await client.connect().then(() => console.log(`Successfully connected to omdb!`))
+    console.log("Welcome to search-movies-cli!", "\n\n");
 
     let favouriteMovies: any[] = []
 
@@ -99,6 +99,7 @@ function presentResults(queryResult: QueryResult): void {
     } else {
         console.log('no rows found!')
     }
+    console.log('\n')
 }
 
 moviesCLI().finally(() => process.exit())
