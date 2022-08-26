@@ -17,10 +17,11 @@ async function moviesCLI() {
         let command = question(">> ")
         if (command === 'q') {
             exit = true
+            break
         }
         console.log(`searching... ${command}`)
         console.log(`\n`)
-        const text = "SELECT name, date, kind FROM movies WHERE name LIKE $1 LIMIT 10"
+        const text = "SELECT name, date, kind FROM movies WHERE LOWER(name) LIKE LOWER($1) LIMIT 10"
         const values = [`%${command}%`]
         const queryResults = await client.query(text, values)
         if (queryResults.rowCount > 0) {
@@ -37,6 +38,7 @@ async function moviesCLI() {
 
 
     console.log("end")
+    return 0
 }
 
 moviesCLI()
