@@ -29,7 +29,7 @@ async function moviesCLI() {
                favouriteMovies = await searchMovies(client, favouriteMovies)
                break
            case '2':
-               await showFavourites(favouriteMovies)
+               await showFavourites(client)
                break
            case '0':
                await performDisconnect(client)
@@ -45,14 +45,27 @@ async function performDisconnect(client: Client) {
     client.end().then(() => console.log('disconnected'))
 }
 
-async function showFavourites(favouriteMovies: any[]) {
-    console.table(favouriteMovies)
+async function showFavourites(client: Client) {
+    const queryResult = await getFavourites(client)
+    presentResults(queryResult)
     return
+}
+
+async function addToFavouritesTable(client: Client, movieId: number) {
+    const text = "INSERT INTO favourites(movie_id) VALUES ($1)"
+    const value = [`${movieId}`]
+    try {
+        await client.query(text, value)
+
+        console.log(`${movieId} added to favourites`, '\n')
+    } catch(err) {
+        console.error(`ERROR: ${err}`)
+    }
 }
 
 async function searchMovies(client: Client, favouriteMovies: any[]): Promise<any[]> {
     const searchTerm = question('move name search term: ')
-    const text = `SELECT name, date budget FROM movies WHERE LOWER(name) LIKE LOWER($1) AND kind = 'movie' ORDER BY date DESC LIMIT 10`
+    const text = `SELECT id, name, date budget FROM movies WHERE LOWER(name) LIKE LOWER($1) AND kind = 'movie' ORDER BY date DESC LIMIT 10`
     const value = [`%${searchTerm}%`]
     console.log(`searching... ${searchTerm}`)
     const queryResult = await client.query(text, value)
@@ -62,10 +75,22 @@ async function searchMovies(client: Client, favouriteMovies: any[]): Promise<any
 
     const listOfMovieNames = queryResult.rows.map((r) => r['name'])
     const index = keyInSelect(listOfMovieNames, 'select a favourite movie')
-    favouriteMovies.push(queryResult.rows[index])
-    console.log(`${listOfMovieNames[index]} added to favourites`, '\n')
+    // console.log(queryResult.rows)
+    await addToFavouritesTable(client, queryResult.rows[index]['id'])
+    // favouriteMovies.push(queryResult.rows[index])
 
     return favouriteMovies
+}
+
+async function getFavourites(client: Client) {
+    const text = "SELECT movies.id as id, movies.name as name, movies.date as date FROM favourites LEFT JOIN movies ON movie_id = movies.id"
+    try {
+        const queryResult = await client.query(text)
+        return queryResult
+    } catch(err) {
+        console.error(`ERROR: ${err}`)
+    }
+    return undefined
 }
 
 function presentResults(queryResult: QueryResult): void {
