@@ -12,13 +12,10 @@ async function moviesCLI() {
 
     let exit = false
 
-    while (exit === false) {
+    while (true) {
         console.log("\nenter a SQL query")
         let command = question(">> ")
-        if (command === 'q') {
-            exit = true
-            break
-        }
+        if (command === 'q') { break }
         console.log(`searching... ${command}`)
         console.log(`\n`)
         const text = "SELECT name, date, kind FROM movies WHERE LOWER(name) LIKE LOWER($1) LIMIT 10"
@@ -31,14 +28,10 @@ async function moviesCLI() {
         else {
             console.log('no results')
         }
-        // .catch((error) => console.error(`ERROR: ${error}`))
-        // .finally(() => client.end())
-        // setTimeout(() => {}, 1000)
     }
 
 
     console.log("end")
-    return 0
 }
 
-moviesCLI()
+moviesCLI().finally(() => process.exit())
