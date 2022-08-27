@@ -1,4 +1,5 @@
 import { question, keyInSelect } from "readline-sync";
+import {utc} from "moment";
 import { Client, QueryResult } from "pg";
 
 function moviesCLI() {
@@ -16,7 +17,7 @@ function moviesCLI() {
 
 
 async function runCliUserInterface(client: Client) {
-    console.log("Welcome to search-movies-cli!", "\n\n");
+    console.log("Welcome to search-movies-cli!");
     let favouriteMovies: any[] = []
     const options = [
         'Quit',
@@ -27,6 +28,7 @@ async function runCliUserInterface(client: Client) {
     let shouldExit = false
 
     while(shouldExit === false) {
+       console.log('\n'.repeat(2))
        options.forEach((op, i) => console.log(`[${i}] ${op}`))
        console.log(`\n`)
        const index =  question(`Choose an action! [${Array.from(options.keys()).join(", ")}]: `)
@@ -56,13 +58,13 @@ async function showFavourites(client: Client) {
     return
 }
 
-async function addToFavouritesTable(client: Client, movieId: number) {
+async function addToFavouritesTable(client: Client, row: any) {
     const text = "INSERT INTO favourites(movie_id) VALUES ($1)"
-    const value = [`${movieId}`]
+    const value = [`${row.id}`]
     try {
         await client.query(text, value)
 
-        console.log(`${movieId} added to favourites`, '\n')
+        console.log(`${row.name} added to favourites`, '\n')
     } catch(err) {
         console.error(`ERROR: ${err}`)
     }
@@ -76,19 +78,16 @@ async function searchMovies(client: Client, favouriteMovies: any[]): Promise<any
     const queryResult = await client.query(text, value)
     presentResults(queryResult)
     console.log(`complete.`)
-    // console.error(`ERROR: ${err}`)
 
     const listOfMovieNames = queryResult.rows.map((r) => r['name'])
-    const index = keyInSelect(listOfMovieNames, 'select a favourite movie')
-    // console.log(queryResult.rows)
-    await addToFavouritesTable(client, queryResult.rows[index]['id'])
-    // favouriteMovies.push(queryResult.rows[index])
+    const index = keyInSelect(listOfMovieNames, 'select a favourite movie', {cancel: 'BACK'})
+    if (index !== -1) { await addToFavouritesTable(client, queryResult.rows[index]) }
 
     return favouriteMovies
 }
 
 async function getFavourites(client: Client) {
-    const text = "SELECT movies.id as id, movies.name as name, movies.date as date FROM favourites LEFT JOIN movies ON movie_id = movies.id"
+    const text = "SELECT movies.id as id, movies.name as name, movies.date as date FROM favourites LEFT JOIN movies ON movie_id = movies.id ORDER BY date DESC"
     try {
         const queryResult = await client.query(text)
         return queryResult
@@ -100,11 +99,20 @@ async function getFavourites(client: Client) {
 
 function presentResults(queryResult: QueryResult): void {
     if (queryResult.rowCount > 0){
-        console.table(queryResult.rows)
+        const formattedRows = formatRows(queryResult.rows)
+        console.table(formattedRows)
     } else {
         console.log('no rows found!')
     }
     console.log('\n')
+}
+
+function formatRows(rows: any[]): any[] {
+    return rows.map((r) => ({name: r.name, date: formatDate(r.date)}))
+}
+
+function formatDate(utcDate: string): string {
+    return utcDate != null ? utc(utcDate).format('DD MMM YYYY') : 'tbc'
 }
 
 moviesCLI()
