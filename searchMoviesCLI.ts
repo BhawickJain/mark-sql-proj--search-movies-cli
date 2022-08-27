@@ -1,17 +1,23 @@
 import { question, keyInSelect } from "readline-sync";
 import { Client, QueryResult } from "pg";
 
-async function moviesCLI() {
+function moviesCLI() {
     //As your database is on your local machine, with default port,
     //and default username and password,
     //we only need to specify the (non-default) database name.
     console.log(`Greetings ${process.env.PGUSER} !`)
     const client = new Client({ database: 'omdb' });
-    await client.connect().then(() => console.log(`Successfully connected to omdb!`))
+    client.connect()
+    .then(() => console.log(`Successfully connected to omdb!`))
+    .then(() => runCliUserInterface(client))
+    .then(() => console.log('exiting...'))
+    .finally(() => process.exit())
+   }
+
+
+async function runCliUserInterface(client: Client) {
     console.log("Welcome to search-movies-cli!", "\n\n");
-
     let favouriteMovies: any[] = []
-
     const options = [
         'Quit',
         'Search Movies Names',
@@ -35,10 +41,9 @@ async function moviesCLI() {
                await performDisconnect(client)
                shouldExit = true
                break
-       }
+ 
+        }
     }
-    console.log('exited')
-
 }
 
 async function performDisconnect(client: Client) {
@@ -102,4 +107,4 @@ function presentResults(queryResult: QueryResult): void {
     console.log('\n')
 }
 
-moviesCLI().finally(() => process.exit())
+moviesCLI()
