@@ -12,7 +12,11 @@ function moviesCLI() {
     .then(() => console.log(`Successfully connected to omdb!`))
     .then(() => runCliUserInterface(client))
     .then(() => console.log('exiting...'))
-    .finally(() => process.exit())
+    .finally(() => process.exit(0))
+    .catch((error) => {
+        console.error(`ERROR: ${error}`)
+        process.exit(1)
+    })
    }
 
 
@@ -72,7 +76,7 @@ async function addToFavouritesTable(client: Client, row: any) {
 
 async function searchMovies(client: Client, favouriteMovies: any[]): Promise<any[]> {
     const searchTerm = question('move name search term: ')
-    const text = `SELECT id, name, date budget FROM movies WHERE LOWER(name) LIKE LOWER($1) AND kind = 'movie' ORDER BY date DESC LIMIT 10`
+    const text = `SELECT id, name, date, budget FROM movies WHERE LOWER(name) LIKE LOWER($1) AND kind = 'movie' ORDER BY date DESC LIMIT 10`
     const value = [`%${searchTerm}%`]
     console.log(`searching... ${searchTerm}`)
     const queryResult = await client.query(text, value)
