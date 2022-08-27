@@ -3,9 +3,11 @@ import {utc} from "moment";
 import { Client, QueryResult } from "pg";
 
 function moviesCLI() {
+
     //As your database is on your local machine, with default port,
     //and default username and password,
     //we only need to specify the (non-default) database name.
+    console.log("\n")
     console.log(`Greetings ${process.env.PGUSER} !`)
     const client = new Client({ database: 'omdb' });
     client.connect()
@@ -22,13 +24,12 @@ function moviesCLI() {
 
 async function runCliUserInterface(client: Client) {
     console.log("Welcome to search-movies-cli!");
-    let favouriteMovies: any[] = []
     const options = [
         'Search Movies Names',
         'See Favourites'
     ]
     const optionActions: (() => Promise<void>)[] = [
-        () => searchMovies(client, favouriteMovies),
+        () => searchMovies(client),
         () => showFavourites(client),
     ]
 
@@ -66,7 +67,7 @@ async function addToFavouritesTable(client: Client, row: any) {
     }
 }
 
-async function searchMovies(client: Client, favouriteMovies: any[]): Promise<void> {
+async function searchMovies(client: Client): Promise<void> {
     const searchTerm = question('move name search term: ')
     const text = `SELECT id, name, date, budget FROM movies WHERE LOWER(name) LIKE LOWER($1) AND kind = 'movie' ORDER BY date DESC LIMIT 10`
     const value = [`%${searchTerm}%`]
