@@ -24,31 +24,23 @@ async function runCliUserInterface(client: Client) {
     console.log("Welcome to search-movies-cli!");
     let favouriteMovies: any[] = []
     const options = [
-        'Quit',
         'Search Movies Names',
         'See Favourites'
     ]
+    const optionActions: (() => Promise<void>)[] = [
+        () => searchMovies(client, favouriteMovies),
+        () => showFavourites(client),
+    ]
 
-    let shouldExit = false
+    let chosenOption: number | null = null
+    while(chosenOption !== -1) {
 
-    while(shouldExit === false) {
-       console.log('\n'.repeat(2))
-       options.forEach((op, i) => console.log(`[${i}] ${op}`))
-       console.log(`\n`)
-       const index =  question(`Choose an action! [${Array.from(options.keys()).join(", ")}]: `)
-       switch (index) {
-           case '1':
-               favouriteMovies = await searchMovies(client, favouriteMovies)
-               break
-           case '2':
-               await showFavourites(client)
-               break
-           case '0':
-               await performDisconnect(client)
-               shouldExit = true
-               break
- 
-        }
+       chosenOption = keyInSelect(options, `Choose an action! `, {cancel: 'QUIT'})
+
+       chosenOption === -1 // if chosen quit
+       ? await performDisconnect(client) 
+       : await optionActions[chosenOption]() 
+
     }
 }
 
@@ -74,7 +66,7 @@ async function addToFavouritesTable(client: Client, row: any) {
     }
 }
 
-async function searchMovies(client: Client, favouriteMovies: any[]): Promise<any[]> {
+async function searchMovies(client: Client, favouriteMovies: any[]): Promise<void> {
     const searchTerm = question('move name search term: ')
     const text = `SELECT id, name, date, budget FROM movies WHERE LOWER(name) LIKE LOWER($1) AND kind = 'movie' ORDER BY date DESC LIMIT 10`
     const value = [`%${searchTerm}%`]
@@ -86,8 +78,7 @@ async function searchMovies(client: Client, favouriteMovies: any[]): Promise<any
     const listOfMovieNames = queryResult.rows.map((r) => r['name'])
     const index = keyInSelect(listOfMovieNames, 'select a favourite movie', {cancel: 'BACK'})
     if (index !== -1) { await addToFavouritesTable(client, queryResult.rows[index]) }
-
-    return favouriteMovies
+return
 }
 
 async function getFavourites(client: Client) {
@@ -108,7 +99,6 @@ function presentResults(queryResult: QueryResult): void {
     } else {
         console.log('no rows found!')
     }
-    console.log('\n')
 }
 
 function formatRows(rows: any[]): any[] {
